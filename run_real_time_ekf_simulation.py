@@ -279,7 +279,7 @@ class RealTimeEKFSimulation:
         axes[2, 2].grid(True)
         
         plt.tight_layout()
-        plt.savefig('/u/12/akyuret1/unix/drone_sim/real_time_ekf_performance.png', dpi=300, bbox_inches='tight')
+        plt.savefig('/workspace/real_time_ekf_performance.png', dpi=300, bbox_inches='tight')
         plt.close()
         
         # Error analysis plot
@@ -301,7 +301,7 @@ class RealTimeEKFSimulation:
         axes[2].grid(True)
         
         plt.tight_layout()
-        plt.savefig('/u/12/akyuret1/unix/drone_sim/real_time_ekf_errors.png', dpi=300, bbox_inches='tight')
+        plt.savefig('/workspace/real_time_ekf_errors.png', dpi=300, bbox_inches='tight')
         plt.close()
         
         # 3D trajectory plot
@@ -320,7 +320,7 @@ class RealTimeEKFSimulation:
         ax.legend()
         ax.grid(True)
         
-        plt.savefig('/u/12/akyuret1/unix/drone_sim/real_time_ekf_3d_trajectory.png', dpi=300, bbox_inches='tight')
+        plt.savefig('/workspace/real_time_ekf_3d_trajectory.png', dpi=300, bbox_inches='tight')
         plt.close()
         
         print("✅ Plots saved:")
@@ -331,7 +331,7 @@ class RealTimeEKFSimulation:
     def save_data(self):
         """Save simulation data for analysis"""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f'/u/12/akyuret1/unix/drone_sim/real_time_ekf_log_{timestamp}.json'
+        filename = f'/workspace/real_time_ekf_log_{timestamp}.json'
         
         data = {
             'timestamps': self.timestamps,
