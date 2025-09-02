@@ -1,0 +1,525 @@
+<?xml version='1.0'?>
+<sdf version='1.8'>
+  <world name='autonomous_drone_world'>
+    <!-- Physics settings -->
+    <physics name='1ms' type='ignored'>
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1</real_time_factor>
+      <real_time_update_rate>1000</real_time_update_rate>
+    </physics>
+
+    <!-- Gravity -->
+    <gravity>0 0 -9.81</gravity>
+
+    <!-- Lighting -->
+    <light name='sun' type='directional'>
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <attenuation>
+        <range>1000</range>
+        <constant>0.9</constant>
+        <linear>0.01</linear>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
+
+    <!-- Ground plane -->
+    <model name='ground_plane'>
+      <static>true</static>
+      <link name='link'>
+        <collision name='collision'>
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>100 100</size>
+            </plane>
+          </geometry>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>100 100</size>
+            </plane>
+          </geometry>
+          <material>
+            <ambient>0.8 0.8 0.8 1</ambient>
+            <diffuse>0.8 0.8 0.8 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Required plugins -->
+    <plugin name='gz::sim::systems::SceneBroadcaster' filename='libgz-sim-scene-broadcaster-system.so'/>
+    <plugin name='gz::sim::systems::Sensors' filename='libgz-sim-sensors-system.so'/>
+    <plugin name='gz::sim::systems::Physics' filename='libgz-sim-physics-system.so'/>
+    <plugin name='gz::sim::systems::Imu' filename='libgz-sim-imu-system.so'/>
+    <plugin name='gz::sim::systems::UserCommands' filename='libgz-sim-user-commands-system.so'/>
+    <plugin name='gz::sim::systems::ApplyLinkWrench' filename='libgz-sim-apply-link-wrench-system.so'/>
+
+    <!-- Autonomous Drone Model -->
+    <model name='autonomous_drone'>
+      <pose>0 0 2 0 0 0</pose>
+      <static>false</static>
+      
+      <!-- Main body -->
+      <link name='base_link'>
+        <inertial>
+          <mass>1.5</mass>
+          <inertia>
+            <ixx>0.029125</ixx>
+            <iyy>0.029125</iyy>
+            <izz>0.055225</izz>
+          </inertia>
+        </inertial>
+        
+        <collision name='collision'>
+          <geometry>
+            <box>
+              <size>0.4 0.4 0.1</size>
+            </box>
+          </geometry>
+        </collision>
+        
+        <visual name='visual'>
+          <geometry>
+            <box>
+              <size>0.4 0.4 0.1</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.2 0.2 0.8 1</ambient>
+            <diffuse>0.2 0.2 0.8 1</diffuse>
+            <specular>0.1 0.1 0.1 1</specular>
+          </material>
+        </visual>
+
+        <!-- IMU Sensor -->
+        <sensor name='imu_sensor' type='imu'>
+          <always_on>1</always_on>
+          <update_rate>250</update_rate>
+          <imu>
+            <angular_velocity>
+              <x>
+                <noise type='gaussian'>
+                  <mean>0.0</mean>
+                  <stddev>2e-4</stddev>
+                  <bias_mean>0.0000075</bias_mean>
+                  <bias_stddev>0.0000008</bias_stddev>
+                </noise>
+              </x>
+              <y>
+                <noise type='gaussian'>
+                  <mean>0.0</mean>
+                  <stddev>2e-4</stddev>
+                  <bias_mean>0.0000075</bias_mean>
+                  <bias_stddev>0.0000008</bias_stddev>
+                </noise>
+              </y>
+              <z>
+                <noise type='gaussian'>
+                  <mean>0.0</mean>
+                  <stddev>2e-4</stddev>
+                  <bias_mean>0.0000075</bias_mean>
+                  <bias_stddev>0.0000008</bias_stddev>
+                </noise>
+              </z>
+            </angular_velocity>
+            <linear_acceleration>
+              <x>
+                <noise type='gaussian'>
+                  <mean>0.0</mean>
+                  <stddev>1.7e-2</stddev>
+                  <bias_mean>0.1</bias_mean>
+                  <bias_stddev>0.001</bias_stddev>
+                </noise>
+              </x>
+              <y>
+                <noise type='gaussian'>
+                  <mean>0.0</mean>
+                  <stddev>1.7e-2</stddev>
+                  <bias_mean>0.1</bias_mean>
+                  <bias_stddev>0.001</bias_stddev>
+                </noise>
+              </y>
+              <z>
+                <noise type='gaussian'>
+                  <mean>0.0</mean>
+                  <stddev>1.7e-2</stddev>
+                  <bias_mean>0.1</bias_mean>
+                  <bias_stddev>0.001</bias_stddev>
+                </noise>
+              </z>
+            </linear_acceleration>
+          </imu>
+          <plugin filename='gz-sim-imu-system' name='gz::sim::systems::Imu'>
+            <topic>/sim/imu_raw</topic>
+          </plugin>
+        </sensor>
+
+        <!-- GPS Sensor -->
+        <sensor name='gps_sensor' type='gps'>
+          <always_on>1</always_on>
+          <update_rate>10</update_rate>
+          <gps>
+            <position_sensing>
+              <horizontal>
+                <noise type='gaussian'>
+                  <mean>0.0</mean>
+                  <stddev>1.0</stddev>
+                </noise>
+              </horizontal>
+              <vertical>
+                <noise type='gaussian'>
+                  <mean>0.0</mean>
+                  <stddev>1.0</stddev>
+                </noise>
+              </vertical>
+            </position_sensing>
+            <velocity_sensing>
+              <horizontal>
+                <noise type='gaussian'>
+                  <mean>0.0</mean>
+                  <stddev>0.1</stddev>
+                </noise>
+              </horizontal>
+              <vertical>
+                <noise type='gaussian'>
+                  <mean>0.0</mean>
+                  <stddev>0.1</stddev>
+                </noise>
+              </vertical>
+            </velocity_sensing>
+          </gps>
+          <plugin filename='gz-sim-gps-system' name='gz::sim::systems::Gps'>
+            <topic>/sim/gps</topic>
+          </plugin>
+        </sensor>
+
+        <!-- Barometer Sensor -->
+        <sensor name='barometer_sensor' type='altimeter'>
+          <always_on>1</always_on>
+          <update_rate>50</update_rate>
+          <altimeter>
+            <vertical_position>
+              <noise type='gaussian'>
+                <mean>0.0</mean>
+                <stddev>0.1</stddev>
+              </noise>
+            </vertical_position>
+            <vertical_velocity>
+              <noise type='gaussian'>
+                <mean>0.0</mean>
+                <stddev>0.1</stddev>
+              </noise>
+            </vertical_velocity>
+          </altimeter>
+          <plugin filename='gz-sim-altimeter-system' name='gz::sim::systems::Altimeter'>
+            <topic>/sim/barometer</topic>
+          </plugin>
+        </sensor>
+
+        <!-- Magnetometer Sensor -->
+        <sensor name='magnetometer_sensor' type='magnetometer'>
+          <always_on>1</always_on>
+          <update_rate>50</update_rate>
+          <magnetometer>
+            <x>
+              <noise type='gaussian'>
+                <mean>0.0</mean>
+                <stddev>0.01</stddev>
+              </noise>
+            </x>
+            <y>
+              <noise type='gaussian'>
+                <mean>0.0</mean>
+                <stddev>0.01</stddev>
+              </noise>
+            </y>
+            <z>
+              <noise type='gaussian'>
+                <mean>0.0</mean>
+                <stddev>0.01</stddev>
+              </noise>
+            </z>
+          </magnetometer>
+          <plugin filename='gz-sim-magnetometer-system' name='gz::sim::systems::Magnetometer'>
+            <topic>/sim/magnetometer</topic>
+          </plugin>
+        </sensor>
+      </link>
+
+      <!-- Propeller 1 (Front Left) -->
+      <link name='propeller_1'>
+        <pose>0.2 0.2 0 0 0 0</pose>
+        <inertial>
+          <mass>0.1</mass>
+          <inertia>
+            <ixx>0.001</ixx>
+            <iyy>0.001</iyy>
+            <izz>0.001</izz>
+          </inertia>
+        </inertial>
+        <collision name='collision'>
+          <geometry>
+            <cylinder>
+              <radius>0.1</radius>
+              <length>0.02</length>
+            </cylinder>
+          </geometry>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <cylinder>
+              <radius>0.1</radius>
+              <length>0.02</length>
+            </cylinder>
+          </geometry>
+          <material>
+            <ambient>0.8 0.8 0.8 1</ambient>
+            <diffuse>0.8 0.8 0.8 1</diffuse>
+          </material>
+        </visual>
+      </link>
+
+      <!-- Propeller 2 (Front Right) -->
+      <link name='propeller_2'>
+        <pose>-0.2 0.2 0 0 0 0</pose>
+        <inertial>
+          <mass>0.1</mass>
+          <inertia>
+            <ixx>0.001</ixx>
+            <iyy>0.001</iyy>
+            <izz>0.001</izz>
+          </inertia>
+        </inertial>
+        <collision name='collision'>
+          <geometry>
+            <cylinder>
+              <radius>0.1</radius>
+              <length>0.02</length>
+            </cylinder>
+          </geometry>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <cylinder>
+              <radius>0.1</radius>
+              <length>0.02</length>
+            </cylinder>
+          </geometry>
+          <material>
+            <ambient>0.8 0.8 0.8 1</ambient>
+            <diffuse>0.8 0.8 0.8 1</diffuse>
+          </material>
+        </visual>
+      </link>
+
+      <!-- Propeller 3 (Rear Left) -->
+      <link name='propeller_3'>
+        <pose>0.2 -0.2 0 0 0 0</pose>
+        <inertial>
+          <mass>0.1</mass>
+          <inertia>
+            <ixx>0.001</ixx>
+            <iyy>0.001</iyy>
+            <izz>0.001</izz>
+          </inertia>
+        </inertial>
+        <collision name='collision'>
+          <geometry>
+            <cylinder>
+              <radius>0.1</radius>
+              <length>0.02</length>
+            </cylinder>
+          </geometry>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <cylinder>
+              <radius>0.1</radius>
+              <length>0.02</length>
+            </cylinder>
+          </geometry>
+          <material>
+            <ambient>0.8 0.8 0.8 1</ambient>
+            <diffuse>0.8 0.8 0.8 1</diffuse>
+          </material>
+        </visual>
+      </link>
+
+      <!-- Propeller 4 (Rear Right) -->
+      <link name='propeller_4'>
+        <pose>-0.2 -0.2 0 0 0 0</pose>
+        <inertial>
+          <mass>0.1</mass>
+          <inertia>
+            <ixx>0.001</ixx>
+            <iyy>0.001</iyy>
+            <izz>0.001</izz>
+          </inertia>
+        </inertial>
+        <collision name='collision'>
+          <geometry>
+            <cylinder>
+              <radius>0.1</radius>
+              <length>0.02</length>
+            </cylinder>
+          </geometry>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <cylinder>
+              <radius>0.1</radius>
+              <length>0.02</length>
+            </cylinder>
+          </geometry>
+          <material>
+            <ambient>0.8 0.8 0.8 1</ambient>
+            <diffuse>0.8 0.8 0.8 1</diffuse>
+          </material>
+        </visual>
+      </link>
+
+      <!-- Joints for propellers -->
+      <joint name='propeller_1_joint' type='revolute'>
+        <parent>base_link</parent>
+        <child>propeller_1</child>
+        <axis>
+          <xyz>0 0 1</xyz>
+          <limit>
+            <lower>-1e16</lower>
+            <upper>1e16</upper>
+          </limit>
+        </axis>
+      </joint>
+
+      <joint name='propeller_2_joint' type='revolute'>
+        <parent>base_link</parent>
+        <child>propeller_2</child>
+        <axis>
+          <xyz>0 0 1</xyz>
+          <limit>
+            <lower>-1e16</lower>
+            <upper>1e16</upper>
+          </limit>
+        </axis>
+      </joint>
+
+      <joint name='propeller_3_joint' type='revolute'>
+        <parent>base_link</parent>
+        <child>propeller_3</child>
+        <axis>
+          <xyz>0 0 1</xyz>
+          <limit>
+            <lower>-1e16</lower>
+            <upper>1e16</upper>
+          </limit>
+        </axis>
+      </joint>
+
+      <joint name='propeller_4_joint' type='revolute'>
+        <parent>base_link</parent>
+        <child>propeller_4</child>
+        <axis>
+          <xyz>0 0 1</xyz>
+          <limit>
+            <lower>-1e16</lower>
+            <upper>1e16</upper>
+          </limit>
+        </axis>
+      </joint>
+
+      <!-- Flight Control Plugin -->
+      <plugin filename='gz-sim-multicopter-motor-model-system' name='gz::sim::systems::MulticopterMotorModel'>
+        <robotNamespace>autonomous_drone</robotNamespace>
+        <jointName>propeller_1_joint</jointName>
+        <linkName>propeller_1</linkName>
+        <turningDirection>ccw</turningDirection>
+        <timeConstantUp>0.0125</timeConstantUp>
+        <timeConstantDown>0.025</timeConstantDown>
+        <maxRotVelocity>1500</maxRotVelocity>
+        <motorConstant>8.54858e-06</motorConstant>
+        <momentConstant>0.016</momentConstant>
+        <commandSubTopic>autonomous_drone/command/motor_speed</commandSubTopic>
+        <motorNumber>0</motorNumber>
+        <rotorDragCoefficient>0.000175</rotorDragCoefficient>
+        <rollingMomentCoefficient>1e-06</rollingMomentCoefficient>
+        <motorSpeedPubTopic>autonomous_drone/motor_speed/0</motorSpeedPubTopic>
+        <actuatorPubTopic>autonomous_drone/actuators</actuatorPubTopic>
+      </plugin>
+
+      <plugin filename='gz-sim-multicopter-motor-model-system' name='gz::sim::systems::MulticopterMotorModel'>
+        <robotNamespace>autonomous_drone</robotNamespace>
+        <jointName>propeller_2_joint</jointName>
+        <linkName>propeller_2</linkName>
+        <turningDirection>cw</turningDirection>
+        <timeConstantUp>0.0125</timeConstantUp>
+        <timeConstantDown>0.025</timeConstantDown>
+        <maxRotVelocity>1500</maxRotVelocity>
+        <motorConstant>8.54858e-06</motorConstant>
+        <momentConstant>0.016</momentConstant>
+        <commandSubTopic>autonomous_drone/command/motor_speed</commandSubTopic>
+        <motorNumber>1</motorNumber>
+        <rotorDragCoefficient>0.000175</rotorDragCoefficient>
+        <rollingMomentCoefficient>1e-06</rollingMomentCoefficient>
+        <motorSpeedPubTopic>autonomous_drone/motor_speed/1</motorSpeedPubTopic>
+        <actuatorPubTopic>autonomous_drone/actuators</actuatorPubTopic>
+      </plugin>
+
+      <plugin filename='gz-sim-multicopter-motor-model-system' name='gz::sim::systems::MulticopterMotorModel'>
+        <robotNamespace>autonomous_drone</robotNamespace>
+        <jointName>propeller_3_joint</jointName>
+        <linkName>propeller_3</linkName>
+        <turningDirection>ccw</turningDirection>
+        <timeConstantUp>0.0125</timeConstantUp>
+        <timeConstantDown>0.025</timeConstantDown>
+        <maxRotVelocity>1500</maxRotVelocity>
+        <motorConstant>8.54858e-06</motorConstant>
+        <momentConstant>0.016</momentConstant>
+        <commandSubTopic>autonomous_drone/command/motor_speed</commandSubTopic>
+        <motorNumber>2</motorNumber>
+        <rotorDragCoefficient>0.000175</rotorDragCoefficient>
+        <rollingMomentCoefficient>1e-06</rollingMomentCoefficient>
+        <motorSpeedPubTopic>autonomous_drone/motor_speed/2</motorSpeedPubTopic>
+        <actuatorPubTopic>autonomous_drone/actuators</actuatorPubTopic>
+      </plugin>
+
+      <plugin filename='gz-sim-multicopter-motor-model-system' name='gz::sim::systems::MulticopterMotorModel'>
+        <robotNamespace>autonomous_drone</robotNamespace>
+        <jointName>propeller_4_joint</jointName>
+        <linkName>propeller_4</linkName>
+        <turningDirection>cw</turningDirection>
+        <timeConstantUp>0.0125</timeConstantUp>
+        <timeConstantDown>0.025</timeConstantDown>
+        <maxRotVelocity>1500</maxRotVelocity>
+        <motorConstant>8.54858e-06</motorConstant>
+        <momentConstant>0.016</momentConstant>
+        <commandSubTopic>autonomous_drone/command/motor_speed</commandSubTopic>
+        <motorNumber>3</motorNumber>
+        <rotorDragCoefficient>0.000175</rotorDragCoefficient>
+        <rollingMomentCoefficient>1e-06</rollingMomentCoefficient>
+        <motorSpeedPubTopic>autonomous_drone/motor_speed/3</motorSpeedPubTopic>
+        <actuatorPubTopic>autonomous_drone/actuators</actuatorPubTopic>
+      </plugin>
+
+      <!-- Lift Drag Plugin -->
+      <plugin filename='gz-sim-lift-drag-system' name='gz::sim::systems::LiftDrag'>
+        <robotNamespace>autonomous_drone</robotNamespace>
+        <linkName>base_link</linkName>
+        <cp>0 0 0</cp>
+        <area>0.1</area>
+        <airDensity>1.2041</airDensity>
+        <forward>1 0 0</forward>
+        <upward>0 0 1</upward>
+        <dragCoefficient>0.1</dragCoefficient>
+        <liftCoefficient>0.1</liftCoefficient>
+        <subTopic>autonomous_drone/command/motor_speed</subTopic>
+      </plugin>
+    </model>
+  </world>
+</sdf>

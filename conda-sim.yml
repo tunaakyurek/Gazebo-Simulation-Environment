@@ -1,0 +1,18 @@
+name: sim_conda
+channels:
+  - robostack-staging
+  - conda-forge
+channel_priority: strict
+dependencies:
+  - python=3.10
+  - ros-humble-ros-base
+  - ros-humble-ros-gz-bridge=0.244.9
+  - libgz-sim7
+  - libgz-msgs9
+  - libgz-transport12
+  - libprotobuf=3.21.12
+  - eigen
+  - tinyxml2
+  - spdlog
+  - yaml
+

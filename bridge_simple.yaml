@@ -1,0 +1,5 @@
+- ros_topic_name: /sim/imu_raw
+  gz_topic_name: /sim/imu_raw
+  ros_type_name: sensor_msgs/msg/Imu
+  gz_type_name: gz.msgs.IMU
+  direction: GZ_TO_ROS

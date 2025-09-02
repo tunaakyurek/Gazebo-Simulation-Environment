@@ -1,0 +1,26 @@
+<?xml version='1.0'?>
+<sdf version='1.8'>
+  <world name='drone_world_new'>
+    <gravity>0 0 -9.81</gravity>
+    <plugin name='gz::sim::systems::SceneBroadcaster' filename='libgz-sim-scene-broadcaster-system.so'/>
+
+    <model name='drone'>
+      <pose>0 0 1 0 0 0</pose>
+      <link name='base_link'>
+        <inertial><mass>1.5</mass></inertial>
+
+        <!-- IMU -->
+        <sensor name='imu' type='imu'>
+          <always_on>1</always_on>
+          <update_rate>200</update_rate>
+        </sensor>
+
+        <!-- GPS -->
+        <sensor name='gps' type='gps'>
+          <always_on>1</always_on>
+          <update_rate>5</update_rate>
+        </sensor>
+      </link>
+    </model>
+  </world>
+</sdf>

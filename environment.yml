@@ -1,0 +1,15 @@
+name: sim
+channels:
+  - robostack-staging
+  - conda-forge
+dependencies:
+  - python=3.10
+  - ros-humble-ros-base
+  - ros-humble-ros-gz-bridge
+  - ros-humble-ros-gz-interfaces
+  - gz-sim
+  - gz-msgs=10
+  - gz-transport
+  - protobuf=3.20
+  - libprotobuf=3.20
+

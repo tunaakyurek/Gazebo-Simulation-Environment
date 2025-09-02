@@ -1,0 +1,14 @@
+
+EKF PARAMETER TUNING TEST REPORT
+================================
+
+Q Scale Sensitivity Analysis:
+Q Scale 0.1: Position RMSE 10.042 m, Velocity RMSE 2.263 m/s
+Q Scale 0.5: Position RMSE 10.013 m, Velocity RMSE 2.277 m/s
+Q Scale 1.0: Position RMSE 10.180 m, Velocity RMSE 2.310 m/s
+Q Scale 2.0: Position RMSE 10.120 m, Velocity RMSE 2.283 m/s
+Q Scale 5.0: Position RMSE 10.403 m, Velocity RMSE 2.326 m/s
+
+Optimal Q Scale: 0.5
+Best Position RMSE: 10.013 m
+Best Velocity RMSE: 2.277 m/s
