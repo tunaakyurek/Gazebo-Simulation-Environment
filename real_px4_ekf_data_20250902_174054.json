@@ -1,0 +1,12 @@
+{
+  "metadata": {
+    "simulation_duration": 13.847119092941284,
+    "target_duration": 45.0,
+    "data_points": 0,
+    "px4_connected": false,
+    "ekf_initialized": false,
+    "source": "real_px4_gz_x500_autonomous_flight",
+    "timestamp": "2025-09-02T17:41:08.421477"
+  },
+  "flight_data": []
+}

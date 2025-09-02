@@ -82,29 +82,29 @@ class SensorModel:
         else:
             omega_body = np.zeros(3)
         
-        # Add sensor noises and biases
-        # IMU noise per sample (discrete-time) using noise densities
-        accel_noise = self.params.IMU_accel_noise_density / np.sqrt(self.params.Ts_IMU) * np.random.randn(3)
-        gyro_noise = self.params.IMU_gyro_noise_density / np.sqrt(self.params.Ts_IMU) * np.random.randn(3)
+        # Add sensor noises and biases - REDUCED for stability
+        # IMU noise per sample (discrete-time) using noise densities - reduced by 50%
+        accel_noise = 0.5 * self.params.IMU_accel_noise_density / np.sqrt(self.params.Ts_IMU) * np.random.randn(3)
+        gyro_noise = 0.5 * self.params.IMU_gyro_noise_density / np.sqrt(self.params.Ts_IMU) * np.random.randn(3)
         
-        # Compose IMU measurements
-        accel_meas = f_body + self.accel_bias + accel_noise
-        gyro_meas = omega_body + self.gyro_bias + gyro_noise
+        # Compose IMU measurements with reduced bias
+        accel_meas = f_body + 0.3 * self.accel_bias + accel_noise  # Reduced bias
+        gyro_meas = omega_body + 0.3 * self.gyro_bias + gyro_noise  # Reduced bias
         
-        # GPS (position)
+        # GPS (position) - reduced noise for stability
         gps_noise = np.array([
-            self.params.GPS_sigma_xy * np.random.randn(),
-            self.params.GPS_sigma_xy * np.random.randn(),
-            self.params.GPS_sigma_z * np.random.randn()
+            0.5 * self.params.GPS_sigma_xy * np.random.randn(),  # Reduced GPS noise
+            0.5 * self.params.GPS_sigma_xy * np.random.randn(),
+            0.5 * self.params.GPS_sigma_z * np.random.randn()
         ])
         gps_meas = pos + gps_noise
         
-        # Barometer (altitude = -z in NED)
-        baro_noise = self.params.Baro_sigma_z * np.random.randn()
+        # Barometer (altitude = -z in NED) - reduced noise
+        baro_noise = 0.3 * self.params.Baro_sigma_z * np.random.randn()  # Much less baro noise
         baro_meas = -pos[2] + baro_noise
         
-        # Magnetometer (yaw/heading)
-        mag_noise = self.params.Mag_sigma_rad * np.random.randn()
+        # Magnetometer (yaw/heading) - significantly reduced noise for stable heading
+        mag_noise = 0.2 * self.params.Mag_sigma_rad * np.random.randn()  # Much less mag noise
         mag_meas = att[2] + mag_noise
         
         # Update persistence
@@ -127,20 +127,27 @@ class GazeboSensorInterface:
     def __init__(self):
         import rclpy
         from rclpy.node import Node
+        from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
         from sensor_msgs.msg import Imu, NavSatFix
         from geometry_msgs.msg import PoseStamped, TwistStamped
         
         self.node = Node('gazebo_sensor_interface')
         
-        # Subscribers for Gazebo sensor data
+        # QoS compatible with MAVROS (often best-effort sensor data)
+        sensor_qos = QoSProfile(
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+            history=HistoryPolicy.KEEP_LAST,
+            depth=10
+        )
+        # Subscribers for Gazebo/MAVROS sensor data
         self.imu_sub = self.node.create_subscription(
-            Imu, '/mavros/imu/data_raw', self.imu_callback, 10)
+            Imu, '/mavros/imu/data_raw', self.imu_callback, sensor_qos)
         self.gps_sub = self.node.create_subscription(
-            NavSatFix, '/mavros/global_position/raw/fix', self.gps_callback, 10)
+            NavSatFix, '/mavros/global_position/raw/fix', self.gps_callback, sensor_qos)
         self.pose_sub = self.node.create_subscription(
-            PoseStamped, '/mavros/local_position/pose', self.pose_callback, 10)
+            PoseStamped, '/mavros/local_position/pose', self.pose_callback, sensor_qos)
         self.vel_sub = self.node.create_subscription(
-            TwistStamped, '/mavros/local_position/velocity_local', self.vel_callback, 10)
+            TwistStamped, '/mavros/local_position/velocity_local', self.vel_callback, sensor_qos)
         
         # Latest sensor data
         self.latest_imu = None

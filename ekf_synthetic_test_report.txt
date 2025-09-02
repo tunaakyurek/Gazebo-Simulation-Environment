@@ -7,14 +7,14 @@ Sample Rate: 100.0 Hz
 Total Steps: 3000
 
 PERFORMANCE METRICS:
-- Position RMSE: 1.426 m
-- Velocity RMSE: 2.160 m/s
-- Attitude RMSE: 3.746 rad (214.6°)
+- Position RMSE: 1.556 m
+- Velocity RMSE: 2.205 m/s
+- Attitude RMSE: 3.752 rad (215.0°)
 
 MAXIMUM ERRORS:
-- Max Position Error: 3.288 m
-- Max Velocity Error: 4.374 m/s
-- Max Attitude Error: 6.886 rad (394.5°)
+- Max Position Error: 3.614 m
+- Max Velocity Error: 4.459 m/s
+- Max Attitude Error: 6.893 rad (395.0°)
 
 PERFORMANCE ASSESSMENT:
 - Position Estimation: FAIR
@@ -22,6 +22,6 @@ PERFORMANCE ASSESSMENT:
 - Attitude Estimation: FAIR
 
 INNOVATION STATISTICS:
-- GPS: 2901 updates, RMS: 2.463, Rejection: 0.0%
-- BARO: 2901 updates, RMS: 1.369, Rejection: 0.0%
-- MAG: 2901 updates, RMS: 1.708, Rejection: 0.0%
+- GPS: 2901 updates, RMS: 2.510, Rejection: 0.0%
+- BARO: 2901 updates, RMS: 1.477, Rejection: 0.0%
+- MAG: 2901 updates, RMS: 1.705, Rejection: 0.0%

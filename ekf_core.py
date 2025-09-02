@@ -96,8 +96,11 @@ class ExtendedKalmanFilter:
         # Calculate Jacobian
         F = calculate_F_sensor_only(x_pred, imu, dt)
         
-        # Process noise with adaptive scaling
+        # Process noise with adaptive scaling and improved tuning
         Q = self.params.Q * dt * self.current_noise_scale
+        
+        # Apply Q scale factor from tuning results (optimal: 5.0)
+        Q *= 5.0
         
         # Ensure Q is positive definite
         Q = self._ensure_positive_definite(Q)
@@ -132,6 +135,13 @@ class ExtendedKalmanFilter:
         
         # Innovation
         y = gps_meas - H @ x_pred
+        
+        # Innovation gating - reject outliers (tighter gate for stable flight)
+        innovation_magnitude = np.linalg.norm(y)
+        if innovation_magnitude > 5.0:  # 5m gate for stable flight
+            print(f"Warning: EKF: GPS innovation too large ({innovation_magnitude:.2f}m). Rejecting measurement.")
+            self._update_innovation_stats('gps', y, rejected=True)
+            return x_pred, P_pred
         
         # Innovation covariance
         S = H @ P_pred @ H.T + R
@@ -187,6 +197,13 @@ class ExtendedKalmanFilter:
         # Innovation
         y = baro_meas - H @ x_pred
         
+        # Innovation gating - reject outliers (tighter gate for stable flight)
+        y_magnitude = float(np.abs(y).item())
+        if y_magnitude > 2.0:  # 2m altitude gate for stable flight
+            print(f"Warning: EKF: Baro innovation too large ({y_magnitude:.2f}m). Rejecting measurement.")
+            self._update_innovation_stats('baro', y, rejected=True)
+            return x_pred, P_pred
+        
         # Innovation covariance
         S = H @ P_pred @ H.T + R
         
@@ -235,6 +252,13 @@ class ExtendedKalmanFilter:
         
         # Innovation with angle wrapping
         y = wrap_to_pi(mag_meas - x_pred[8])
+        
+        # Innovation gating for magnetometer (tighter for stable flight)
+        y_magnitude = float(np.abs(y).item())
+        if y_magnitude > np.deg2rad(15):  # 15 degree gate for stable flight
+            print(f"Warning: EKF: Mag innovation too large ({np.rad2deg(y_magnitude):.1f}°). Rejecting measurement.")
+            self._update_innovation_stats('mag', y, rejected=True)
+            return x_pred, P_pred
         
         # Innovation covariance
         S = H @ P_pred @ H.T + R
@@ -435,11 +459,27 @@ class ExtendedKalmanFilter:
         x[8] = wrap_to_pi(x[8])  # Wrap yaw
     
     def _ensure_positive_definite(self, M: np.ndarray) -> np.ndarray:
-        """Ensure matrix is positive definite"""
-        U, S, Vt = np.linalg.svd(M)
-        S = np.maximum(S, 1e-12)  # Prevent singular values from becoming too small
-        S = np.minimum(S, 1e6)    # Prevent singular values from becoming too large
-        return U @ np.diag(S) @ Vt
+        """Ensure matrix is positive definite with improved numerical stability"""
+        try:
+            # First try Cholesky decomposition to check if already positive definite
+            np.linalg.cholesky(M)
+            return M
+        except np.linalg.LinAlgError:
+            # If not positive definite, use SVD regularization
+            U, S, Vt = np.linalg.svd(M)
+            # More conservative bounds for better stability
+            S = np.maximum(S, 1e-8)   # Prevent singular values from becoming too small
+            S = np.minimum(S, 1e4)    # Prevent singular values from becoming too large
+            M_reg = U @ np.diag(S) @ Vt
+            
+            # Ensure symmetry
+            M_reg = 0.5 * (M_reg + M_reg.T)
+            
+            # Add small diagonal regularization if needed
+            if np.any(np.diag(M_reg) < 1e-10):
+                M_reg += 1e-10 * np.eye(M_reg.shape[0])
+            
+            return M_reg
     
     def _update_innovation_stats(self, sensor_type: str, innovation: np.ndarray, rejected: bool = False):
         """Update innovation statistics"""

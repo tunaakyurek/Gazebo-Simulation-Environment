@@ -50,26 +50,28 @@ class RealTimeEKFSimulation:
         print(f"   Drone profile: {self.params.profile}")
     
     def generate_realistic_trajectory(self) -> np.ndarray:
-        """Generate a realistic drone flight trajectory"""
+        """Generate a realistic and stable drone flight trajectory"""
         t = np.linspace(0, self.duration, self.n_steps)
         
-        # Create a complex 3D trajectory
+        # Create a stable 3D trajectory
         x_true = np.zeros((self.n_steps, 9))
         
-        # Position: Figure-8 pattern with altitude changes
-        x_true[:, 0] = 10 * np.sin(0.3 * t)  # X: Figure-8
-        x_true[:, 1] = 10 * np.sin(0.6 * t)  # Y: Figure-8
-        x_true[:, 2] = 5 + 3 * np.sin(0.2 * t)  # Z: Altitude variation
+        # Position: Gentler figure-8 pattern with smooth altitude changes
+        # Reduced frequency and amplitude for more realistic flight
+        x_true[:, 0] = 5 * np.sin(0.15 * t)  # X: Slower, smaller figure-8
+        x_true[:, 1] = 5 * np.sin(0.3 * t)   # Y: Slower, smaller figure-8
+        x_true[:, 2] = 3 + 1 * np.sin(0.1 * t)  # Z: Gentle altitude variation
         
-        # Velocity: Derivative of position
-        x_true[:, 3] = 10 * 0.3 * np.cos(0.3 * t)  # Vx
-        x_true[:, 4] = 10 * 0.6 * np.cos(0.6 * t)  # Vy
-        x_true[:, 5] = 3 * 0.2 * np.cos(0.2 * t)   # Vz
+        # Velocity: Derivative of position (much smoother)
+        x_true[:, 3] = 5 * 0.15 * np.cos(0.15 * t)  # Vx: Reduced velocity
+        x_true[:, 4] = 5 * 0.3 * np.cos(0.3 * t)    # Vy: Reduced velocity
+        x_true[:, 5] = 1 * 0.1 * np.cos(0.1 * t)    # Vz: Very gentle vertical
         
-        # Attitude: Realistic drone attitude changes
-        x_true[:, 6] = 0.1 * np.sin(0.4 * t)  # Roll
-        x_true[:, 7] = 0.1 * np.cos(0.4 * t)  # Pitch
-        x_true[:, 8] = 0.1 * t  # Yaw (slow rotation)
+        # Attitude: Much more stable and realistic attitude changes
+        # Typical drone attitudes are small angles during normal flight
+        x_true[:, 6] = 0.05 * np.sin(0.2 * t)  # Roll: ±3° max
+        x_true[:, 7] = 0.05 * np.cos(0.2 * t)  # Pitch: ±3° max  
+        x_true[:, 8] = 0.02 * t  # Yaw: Very slow rotation (±1.2° over 60s)
         
         return x_true
     

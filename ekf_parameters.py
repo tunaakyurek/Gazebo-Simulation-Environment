@@ -122,22 +122,26 @@ class EKFParameters:
         """Initialize EKF Q and R matrices"""
         
         # Process noise matrix Q (9x9 for [pos(3); vel(3); att(3)])
-        # Optimized for enhanced performance
+        # Optimized for stable drone dynamics
         self.Q = np.diag([
-            0.02, 0.02, 0.02,  # Position process noise
-            0.10, 0.10, 0.12,  # Velocity process noise
-            0.05, 0.05, 0.06   # Attitude process noise
+            0.0005, 0.0005, 0.0005,  # Position process noise (very stable)
+            0.02, 0.02, 0.01,        # Velocity process noise (stable flight)
+            0.001, 0.001, 0.0005     # Attitude process noise (very stable attitude)
         ])
         
-        # Measurement noise matrices
+        # Measurement noise matrices - optimized for stable dynamics
+        # GPS noise matched to reduced sensor noise
         self.R_gps = np.diag([
-            self.GPS_sigma_xy**2,
-            self.GPS_sigma_xy**2,
-            self.GPS_sigma_z**2
+            (self.GPS_sigma_xy * 0.5)**2,  # Reduced to match stable GPS
+            (self.GPS_sigma_xy * 0.5)**2,
+            (self.GPS_sigma_z * 0.5)**2
         ])
         
-        self.R_baro = self.Baro_sigma_z**2
-        self.R_mag = self.Mag_sigma_rad**2
+        # Barometer noise matched to reduced sensor noise
+        self.R_baro = (self.Baro_sigma_z * 0.3)**2
+        
+        # Magnetometer noise matched to reduced sensor noise
+        self.R_mag = (self.Mag_sigma_rad * 0.2)**2
     
     def get_imu_noise(self, dt: float) -> Dict[str, np.ndarray]:
         """Get IMU noise for given time step"""
