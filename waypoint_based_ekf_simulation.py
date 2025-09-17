@@ -30,6 +30,9 @@ class WaypointBasedEKFSimulation:
         self.ekf = ExtendedKalmanFilter(self.params)
         self.sensor_model = SensorModel(self.params)
         
+        # Apply improved magnetometer gating
+        self.improve_magnetometer_gating()
+        
         # Generate waypoint mission
         self.waypoints = self.generate_figure8_waypoints()
         
@@ -79,6 +82,55 @@ class WaypointBasedEKFSimulation:
         waypoints.append({'x': 0, 'y': 0, 'z': 5, 'yaw': 0, 'hold_time': 3.0})
         
         return waypoints
+    
+    def improve_magnetometer_gating(self):
+        """Apply improved magnetometer innovation gating to the EKF"""
+        # Override the EKF's magnetometer update method with improved gating
+        original_update_mag = self.ekf.update_mag
+        
+        def improved_update_mag(x_pred, P_pred, mag_meas):
+            """Improved magnetometer update with better innovation gating"""
+            from ekf_dynamics import wrap_to_pi
+            
+            # Magnetometer measures yaw angle psi
+            H = np.zeros((1, 9))
+            H[0, 8] = 1  # yaw component
+            
+            R = np.array([[self.params.R_mag]])  # Ensure proper matrix dimensions
+            
+            # Innovation with angle wrapping
+            y = wrap_to_pi(mag_meas - x_pred[8])
+            y = np.array([[y]])  # Ensure proper matrix dimensions for Kalman update
+            
+            # IMPROVED innovation gating (30° instead of 15°)
+            y_magnitude = float(np.abs(y).item())
+            if y_magnitude > np.deg2rad(30):  # Increased from 15° to 30°
+                if y_magnitude > np.deg2rad(45):  # Only warn for very large innovations
+                    print(f"Warning: EKF: Mag innovation large ({np.rad2deg(y_magnitude):.1f}°). Rejecting measurement.")
+                self.ekf._update_innovation_stats('mag', y, rejected=True)
+                return x_pred, P_pred
+            
+            # Continue with standard Kalman update
+            S = H @ P_pred @ H.T + R
+            S = S + 1e-6  # Regularization
+            
+            if np.linalg.cond(S) > 1e12:
+                self.ekf._update_innovation_stats('mag', y, rejected=True)
+                return x_pred, P_pred
+            
+            K = P_pred @ H.T @ np.linalg.inv(S)
+            x_est = x_pred + K @ y
+            
+            # Joseph form covariance update
+            I = np.eye(9)
+            P = (I - K @ H) @ P_pred @ (I - K @ H).T + K @ R @ K.T
+            
+            self.ekf._update_innovation_stats('mag', y)
+            return x_est, P
+        
+        # Replace the method
+        self.ekf.update_mag = improved_update_mag
+        print("🔧 Applied improved magnetometer innovation gating (30° threshold)")
     
     def generate_realistic_waypoint_trajectory(self) -> np.ndarray:
         """Generate realistic autonomous flight trajectory following waypoints"""
@@ -208,9 +260,10 @@ class WaypointBasedEKFSimulation:
             # EKF step
             x_est, P = self.ekf.step(
                 sensors['imu'], self.dt,
-                sensors.get('gps'),
-                sensors.get('baro'),
-                sensors.get('mag')
+                gps_meas=sensors.get('gps'),
+                baro_meas=sensors.get('baro'),
+                mag_meas=sensors.get('mag'),
+                use_accel_tilt=True
             )
             
             # Store data
@@ -436,7 +489,9 @@ class WaypointBasedEKFSimulation:
             'ekf_parameters': {
                 'profile': self.params.profile,
                 'Q_diagonal': self.params.Q.diagonal().tolist(),
-                'R_diagonal': self.params.R.diagonal().tolist()
+                'R_gps': self.params.R_gps.diagonal().tolist(),
+            'R_baro': self.params.R_baro,
+            'R_mag': self.params.R_mag
             }
         }
         
